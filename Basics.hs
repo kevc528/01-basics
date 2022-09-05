@@ -518,9 +518,10 @@ that outputs the three strings in order. (Try it out in ghci!)
 -}
 
 many :: IO ()
-many = do putStr "Hello" -- each line in the sequence
-          putStr " World!" -- must be an IO action
-          putStr "\n" -- don't forget the newline
+many = do
+  putStr "Hello" -- each line in the sequence
+  putStr " World!" -- must be an IO action
+  putStr "\n" -- don't forget the newline
 
 {-
 Note: white-space is significant here. The `do` notation sequences actions, but
@@ -725,16 +726,19 @@ pat4 :: ((Int, Int), Int) -> Int
 pat4 ((a, b), c) = a * (b + c)
 
 -- >>> pat4 tup4
+-- 5
 
 pat5 :: (Int, (Int, Int)) -> Int
 pat5 (a, (b, c)) = a * (b + c)
 
 -- >>> pat5 tup5
+-- 5
 
 pat6 :: (Int, Int, Int) -> Int
 pat6 (a, b, c) = a * (b + c)
 
 -- >>> pat6 tup6
+-- 5
 
 {-
 We can stick anything in tuples, even IO actions.
@@ -817,7 +821,8 @@ error if it is ever evaluated.
 -}
 
 jn' :: Maybe (Maybe a) -> Maybe a
-jn' = undefined
+jn' (Just (Just x)) = Just x
+jn' _ = Nothing
 
 {-
 'Maybe' is useful for partial functions
@@ -848,7 +853,7 @@ l1 :: [Double]
 l1 = [1.0, 2.0, 3.0, 4.0]
 
 l2 :: [Int]
-l2 = undefined -- make a list of numbers
+l2 = [1, 2, 3, 4] -- make a list of numbers
 
 {-
 Lists can contain structured data...
@@ -862,7 +867,7 @@ l3 = [(1, True), (2, False)]
 -}
 
 l4 :: [[Int]]
-l4 = undefined -- make a list of lists
+l4 = [[1, 2, 3], [4, 5, 6]] -- make a list of lists
 
 {-
 List elements *must* have the same type.
@@ -892,6 +897,7 @@ What is the value of l7?
 -}
 
 -- >>> l7
+-- "hello 552!"
 --
 
 {-
@@ -921,8 +927,10 @@ Try evaluating `c1` and `c2`.
 -}
 
 -- >>> c1
+-- [True,False,False]
 --
 -- >>> c2
+-- [1]
 --
 
 {-
@@ -955,8 +963,10 @@ Try evaluating `s1` and `s2`.
 -}
 
 -- >>> s1
+-- "abc"
 --
 -- >>> s2
+-- "abc"
 --
 
 {-
@@ -1073,7 +1083,7 @@ range :: Int -> Int -> [Int]
 **Step 3**: Define the function. This part is for you to do for your quiz.
 -}
 
-range i j = undefined
+range i j = if i > j then [] else i : range (i + 1) j
 
 {-
 **Step 4**: Run the tests.
@@ -1121,7 +1131,10 @@ lists that have three or more elements.
 -}
 
 isLong :: [a] -> Bool
-isLong = undefined
+isLong [_, _] = False
+isLong [_] = False
+isLong [] = False
+isLong _ = True
 
 testIsLong :: Test
 testIsLong =
@@ -1129,11 +1142,18 @@ testIsLong =
     [ not (isLong []) ~? "nil", -- can convert booleans to tests by naming them via `~?`
       not (isLong "a") ~? "one",
       not (isLong "ab") ~? "two",
-      isLong "abc" ~? "three"
+      isLong "abc" ~? "three",
+      isLong "abcd" ~? "four"
     ]
 
+runILTests :: IO Counts
+runILTests = runTestTT testIsLong
+
 {-
-Finally, all of the patterns we have shown you so far have been part of definitions. We can define a function, like `isSingleton` or `isGreeting` above, by cases, using multiple lines. This style is common in Haskell, but if you are coming from OCaml, you might be more familiar with `match`, or a separate expression form of pattern matching. Such a form is also available in Haskell, using the `case` and `of` keywords.
+Finally, all of the patterns we have shown you so far have been part of definitions.
+We can define a function, like `isSingleton` or `isGreeting` above, by cases, using multiple lines.
+This style is common in Haskell, but if you are coming from OCaml, you might be more familiar with `match`,
+or a separate expression form of pattern matching. Such a form is also available in Haskell, using the `case` and `of` keywords.
 
 For example, we can rewrite `isGreeting` using `case` instead.
 -}
@@ -1148,7 +1168,11 @@ isGreeting2 s =
     _ -> False
 
 {-
-Note that all of the patterns in a case expression must start in the same column of your source file. This expression is layout sensitive, and if things don't line up, you will get a compilation error. Case expressions are particularly good for *nested* patterns, where you might want to match again inside of a branch. Here's a silly definition of `isGreeting` that demonstrates a nested pattern. Note how the layout determines where the patterns for the inner `case` end and the ones for the outer `case` resume.
+Note that all of the patterns in a case expression must start in the same column of your source file.
+This expression is layout sensitive, and if things don't line up, you will get a compilation error.
+Case expressions are particularly good for *nested* patterns, where you might want to match again inside of a branch.
+Here's a silly definition of `isGreeting` that demonstrates a nested pattern.
+Note how the layout determines where the patterns for the inner `case` end and the ones for the outer `case` resume.
 -}
 
 isGreeting3 :: String -> Bool
@@ -1189,8 +1213,10 @@ sum :: [Int] -> Int
 case analysis.)
 -}
 
-sum [] = 0
-sum (x : xs) = x + sum xs
+sum l =
+  case l of
+    [] -> 0
+    (h : tl) -> h + sum tl
 
 {-
 **Step 4**: Run the tests.
@@ -1281,7 +1307,8 @@ listIncr :: [Int] -> [Int]
 **Step 3**: Define the function.
 -}
 
-listIncr = undefined
+listIncr [] = []
+listIncr (x : xs) = x + 1 : listIncr xs
 
 {-
 **Step 4**: Run the tests.
@@ -1304,7 +1331,8 @@ listAddTests :: Test
 listAddTests =
   TestList
     [ listAdd [1, 2, 3] [2, 4, 5] ~?= [3, 6, 8],
-      listAdd [42] [] ~?= []
+      listAdd [42] [] ~?= [],
+      listAdd [1] [1, 2] ~?= [2]
     ]
 
 {-
@@ -1316,7 +1344,9 @@ listAdd :: [Int] -> [Int] -> [Int]
 **Step 3**: Define the function.
 -}
 
-listAdd = undefined
+listAdd [] _ = []
+listAdd _ [] = []
+listAdd (x : xs) (y : ys) = x + y : listAdd xs ys
 
 {-
 **Step 4**: Run the tests.
@@ -1326,7 +1356,7 @@ runLAddTests :: IO Counts
 runLAddTests = runTestTT listAddTests
 
 -- >>> runLAddTests
--- Counts {cases = 2, tried = 2, errors = 0, failures = 0}
+-- Counts {cases = 3, tried = 3, errors = 0, failures = 0}
 
 {-
 Function practice: "Infinite" lists
